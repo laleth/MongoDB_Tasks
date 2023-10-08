@@ -1,0 +1,111 @@
+1)Find all the topics and tasks which are thought in the month of October
+
+db.topics.find({
+  date: {
+    $gte: ISODate("2020-10-01"),
+    $lte: ISODate("2020-10-31")
+  }
+})
+
+
+db.tasks.find({
+  date: {
+    $gte: ISODate("2020-10-01"),
+    $lte: ISODate("2020-10-31")
+  }
+})
+
+
+
+2)Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+
+db.company_drives.find({
+  date: {
+    $gte: ISODate("2020-10-15"),
+    $lte: ISODate("2020-10-31")
+  }
+})
+
+
+3)Find all the company drives and students who are appeared for the placement.
+
+db.company_drives.aggregate([
+  {
+    $lookup: {
+      from: "attendance",
+      localField: "_id",
+      foreignField: "drive_id",
+      as: "attendance"
+    }
+  },
+  {
+    $match: {
+      "attendance.status": "appeared"
+    }
+  }
+])
+
+
+4)Find the number of problems solved by the user in codekata
+
+db.codekata.aggregate([
+  {
+    $match: {
+      user_id: 'user_id' 
+    }
+  },
+  {
+    $group: {
+      _id: "$user_id",
+      problemsSolved: { $sum: 1 }
+    }
+  }
+])
+
+
+
+5)Find all the mentors with who has the mentee's count more than 15
+
+db.mentors.find({menteeCount: { $gt: 15 }})
+
+6)Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+
+db.users.aggregate([
+  {
+    $lookup: {
+      from: "attendance",
+      localField: "_id",
+      foreignField: "user_id",
+      as: "attendance"
+    }
+  },
+  {
+    $lookup: {
+      from: "tasks",
+      localField: "_id",
+      foreignField: "user_id",
+      as: "tasks"
+    }
+  },
+  {
+    $match: {
+      $and: [
+        {
+          $or: [
+            { "attendance.status": "absent" },
+            { "attendance.status": { $exists: false } }
+          ]
+        },
+        {
+          "tasks": { $size: 0 }
+        },
+        {
+          "attendance.date": {
+            $gte: ISODate("2020-10-15"),
+            $lte: ISODate("2020-10-31")
+          }
+        }
+      ]
+    }
+  }
+])
